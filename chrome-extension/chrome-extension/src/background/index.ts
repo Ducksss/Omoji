@@ -19,5 +19,5 @@ chrome.commands.onCommand.addListener((command, tab) => {
   //     description: 'do somthing else',
   //   },
   // },
-  console.log(command)
+  console.log(command);
 });
