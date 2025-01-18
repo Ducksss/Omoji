@@ -4,6 +4,8 @@ import { exampleThemeStorage } from '@extension/storage';
 import { useState } from 'react';
 import Webcam from 'react-webcam';
 import ClipLoader from 'react-spinners/ClipLoader';
+import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
 
 const videoConstraints = {
   width: 1280,
@@ -11,116 +13,127 @@ const videoConstraints = {
   facingMode: 'user',
 };
 
-const sendData = async (imageSrc: string) => {
-  let result1, result2;
-  try {
-    console.log('imageSrc', imageSrc);
-    const response1 = await fetch('http://localhost:8000/image-to-emoji', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        image: imageSrc, // Assuming `imageSrc` is a valid base64 image string or URL
-      }),
-    });
+interface ApiResponse {
+  emoji: string;
+}
 
-    // Check if the response is OK (status 200-299)
-    if (!response1.ok) {
-      throw new Error(`Request failed with status ${response1.status}`);
-    }
+const sendData = async (
+  imageSrc: string,
+  setFastData: React.Dispatch<React.SetStateAction<ApiResponse | null>>,
+  setSlowData: React.Dispatch<React.SetStateAction<ApiResponse | null>>,
+  setLoadingFast: React.Dispatch<React.SetStateAction<boolean>>,
+  setLoadingSlow: React.Dispatch<React.SetStateAction<boolean>>,
+) => {
+  // Fast API call
+  const fastApiPromise = axios.post('http://localhost:8000/image-to-emoji', {
+    image: imageSrc,
+  });
 
-    // Optionally, handle the response body if necessary
-    result1 = await response1.json();
-    console.log('Response1 from server:', result1);
-  } catch (error1) {
-    console.error('Error1 sending data:', error1);
-  }
+  // Slow API call
+  // const slowApiPromise = axios.post('http://localhost:8000/generate-emoji', {
+  //   image: imageSrc,
+  // });
 
   try {
-    const response2 = await fetch('http://localhost:8000/generate-emoji', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        image: imageSrc, // Assuming `imageSrc` is a valid base64 image string or URL
-      }),
-    });
-
-    // Check if the response is OK (status 200-299)
-    if (!response2.ok) {
-      throw new Error(`Request failed with status ${response2.status}`);
-    }
+    // Handle fast API response
+    const fastResult = await fastApiPromise;
+    setFastData(fastResult.data);
+    setLoadingFast(false);
   } catch (error) {
-    console.error('Error sending data:', error);
+    console.error('Fast API error:', error);
+    setLoadingFast(false);
   }
 
-  return [result1, result2];
+  // try {
+  //   // Handle slow API response
+  //   const slowResult = await slowApiPromise;
+  //   setSlowData(slowResult.data);
+  //   setLoadingSlow(false);
+  // } catch (error) {
+  //   console.error('Slow API error:', error);
+  //   setLoadingSlow(false);
+  // }
 };
 
 const Popup = () => {
   const theme = useStorage(exampleThemeStorage);
   const isLight = theme === 'light';
-  const [loading, setLoading] = useState(false);
-  const [color] = useState('#ffffff'); // Static color for spinner, can be dynamic later if needed
-  const [data, setData] = useState(null);
-  const [image, setImage] = useState(null);
-
-  const logo = isLight ? 'popup/logo_vertical.svg' : 'popup/logo_vertical_dark.svg';
+  const [loadingFast, setLoadingFast] = useState(false);
+  const [loadingSlow, setLoadingSlow] = useState(false);
+  const [fastData, setFastData] = useState<ApiResponse | null>(null);
+  const [slowData, setSlowData] = useState<ApiResponse | null>(null);
 
   // Handle webcam photo capture
-  const handleCapturePhoto = async (getScreenshot: () => string | null) => {
+  const handleCapturePhoto = async getScreenshot => {
     const imageSrc = getScreenshot();
     if (imageSrc) {
-      setImage(imageSrc);
-      setLoading(true);
-      const result = await sendData(imageSrc);
-      setData(result);
-      setImage(null);
-      console.log('XIAN', result);
-      setLoading(false);
+      setLoadingFast(true);
+      setLoadingSlow(true);
+      console.log('test');
+      await sendData(imageSrc, setFastData, setSlowData, setLoadingFast, setLoadingSlow);
     }
   };
-
+  const handleCopyToClipboard = async () => {
+    if (fastData?.emoji) {
+      try {
+        await navigator.clipboard.writeText(fastData.emoji);
+        toast.success('Copied to clipboard!', {
+          position: 'top-center',
+          autoClose: 3000,
+        });
+      } catch (error) {
+        console.error('Failed to copy text to clipboard:', error);
+        toast.error('Failed to copy to clipboard.', {
+          position: 'top-center',
+          autoClose: 3000,
+        });
+      }
+    }
+  };
   return (
     <div className={`App`}>
+      <ToastContainer />
       <header className={`App-header ${isLight ? 'text-gray-900' : 'text-gray-100'}`}>
-        <div className="flex flex-row justify-center " style={{ alignItems: 'center' }}>
-          <img src={chrome.runtime.getURL(logo)} className="App-logo" alt="logo" />
-          <p className="text-3xl font-bold mb-3">Omoji 📸</p>
-        </div>
-        {image ? (
-          <div className="flex flex-col items-center">
-            <img
-              src={image}
-              alt="captured"
-              style={{
-                height: '720',
-                width: '1280',
-              }}
-            />
-            <ClipLoader color={color} loading={loading} size={150} />
-          </div>
-        ) : (
-          <Webcam
-            audio={false}
-            height={720}
-            width={1280}
-            screenshotFormat="image/jpeg"
-            videoConstraints={videoConstraints}
-            onUserMedia={() => console.log('User media')}
-            onUserMediaError={() => console.log('User media error')}
-            onScreenshot={handleCapturePhoto}>
-            {({ getScreenshot }) => (
+        <Webcam
+          audio={false}
+          height={720}
+          screenshotFormat="image/jpeg"
+          width={1280}
+          style={{ borderRadius: 5 }}
+          videoConstraints={videoConstraints}>
+          {({ getScreenshot }) => (
+            <>
+              <div className="result-section gap-4 flex justify-center items-center w-full">
+                <div className="flex w-full justify-center items-center">
+                  {loadingFast && (
+                    <ClipLoader className="my-4" aria-label="Loading Fast API" color="#3b3b3b" size={20} />
+                  )}
+                  {fastData && (
+                    <div className="flex flex-col w-full">
+                      <span className="fast-result-emoji-text">👦🏻</span>
+                      <button className="copy-button" aria-label="Copy to clipboard" onClick={handleCopyToClipboard}>
+                        Copy
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* <div className="flex w-full justify-center items-center">
+                  {loadingSlow && <ClipLoader aria-label="Loading Slow API" color="#3b3b3b" size={20} />}
+                  {slowData && <span>{slowData.emoji}</span>}
+                </div> */}
+              </div>
+
               <button
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                aria-label="Capture photo"
+                className="capture-button"
+                disabled={loadingFast}
                 onClick={() => handleCapturePhoto(getScreenshot)}>
-                Capture photo
+                Capture Photo
               </button>
-            )}
-          </Webcam>
-        )}
+            </>
+          )}
+        </Webcam>
       </header>
     </div>
   );
