@@ -11,29 +11,41 @@ from pydantic import BaseModel
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 import torch
 from typing import Dict
+import base64
+from openai import OpenAI
+import os
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="Emoji Suggester API",
-    description="API for suggesting emojis based on text input using KoalaAI/Emoji-Suggester model",
+    title="Emoji Suggester and Image Analysis API",
+    description="API for suggesting emojis and analyzing images",
     version="1.0.0",
 )
 
 
-# Pydantic model for request
+# Pydantic models
 class TextInput(BaseModel):
     text: str
 
 
-# Pydantic model for response
 class EmojiPrediction(BaseModel):
     text: str
     suggested_emoji: str
 
 
-# Load model and tokenizer on startup
+class ImageInput(BaseModel):
+    image: str  # base64 encoded image
+    prompt: str = "What's in this image?"  # Optional custom prompt
+
+
+class ImageAnalysis(BaseModel):
+    caption: str
+
+
+# Initialize clients and models
 model = None
 tokenizer = None
+openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
 @app.on_event("startup")
@@ -56,19 +68,54 @@ async def predict_emoji(input_data: TextInput) -> Dict:
         raise HTTPException(status_code=500, detail="Model not loaded")
 
     try:
-        # Tokenize input text
         inputs = tokenizer(input_data.text, return_tensors="pt")
 
-        # Make prediction
         with torch.no_grad():
             outputs = model(**inputs)
 
-        # Get predicted emoji
         predicted_emoji = model.config.id2label[outputs.logits.argmax(dim=-1).item()]
 
         return {"text": input_data.text, "suggested_emoji": predicted_emoji}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+
+
+@app.post("/image", response_model=ImageAnalysis)
+async def analyze_image(input_data: ImageInput) -> Dict:
+    if not os.getenv("OPENAI_API_KEY"):
+        raise HTTPException(status_code=500, detail="OpenAI API key not configured")
+
+    try:
+        # Validate base64 string
+        try:
+            image_data = base64.b64decode(input_data.image)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid base64 image data")
+
+        # Call OpenAI Vision API
+        response = openai_client.chat.completions.create(
+            model="gpt-4-vision-preview",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": input_data.prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{input_data.image}"
+                            },
+                        },
+                    ],
+                }
+            ],
+            max_tokens=500,
+        )
+
+        return {"caption": response.choices[0].message.content}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Image analysis error: {str(e)}")
 
 
 @app.get("/health")
