@@ -147,7 +147,7 @@ async def image_to_emoji(input_data: ImageToEmojiInput) -> Dict:
 
     try:
         # First, get image description from Vision API
-        vision_response = openai_client.chat.completions.create(
+        emoji_response = openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {
@@ -155,7 +155,7 @@ async def image_to_emoji(input_data: ImageToEmojiInput) -> Dict:
                     "content": [
                         {
                             "type": "text",
-                            "text": "Describe the image like posting a new tweet",
+                            "text": "Describe subject as a single emoji",
                         },
                         {
                             "type": "image_url",
@@ -167,17 +167,39 @@ async def image_to_emoji(input_data: ImageToEmojiInput) -> Dict:
             max_tokens=100,  # Shorter response for efficiency
         )
 
-        image_description = vision_response.choices[0].message.content
+        emoji = emoji_response.choices[0].message.content
 
-        # Then, get emoji prediction for the description
-        inputs = tokenizer(image_description, return_tensors="pt")
+        # First, get image description from Vision API
+        tweet_response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Describe subject as a tweet",
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"{input_data.image}"},
+                        },
+                    ],
+                }
+            ],
+            max_tokens=100,  # Shorter response for efficiency
+        )
+        tweet = tweet_response.choices[0].message.content
 
-        with torch.no_grad():
-            outputs = model(**inputs)
+        # # Then, get emoji prediction for the description
+        # inputs = tokenizer(image_description, return_tensors="pt")
+        #
+        # with torch.no_grad():
+        #     outputs = model(**inputs)
+        #
+        # predicted_emoji = model.config.id2label[outputs.logits.argmax(dim=-1).item()]
 
-        predicted_emoji = model.config.id2label[outputs.logits.argmax(dim=-1).item()]
-
-        return {"emoji": predicted_emoji, "text": image_description}
+        return {"emoji": emoji, "text": tweet}
 
     except Exception as e:
         raise HTTPException(
