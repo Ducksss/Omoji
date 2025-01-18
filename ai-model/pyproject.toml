@@ -1,0 +1,13 @@
+[project]
+name = "ai-model"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi[standard]>=0.115.6",
+    "huggingface-hub>=0.27.1",
+    "openai>=1.59.8",
+    "torch>=2.5.1",
+    "transformers>=4.48.0",
+]

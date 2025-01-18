@@ -94,7 +94,7 @@ async def analyze_image(input_data: ImageInput) -> Dict:
 
         # Call OpenAI Vision API
         response = openai_client.chat.completions.create(
-            model="gpt-4-vision-preview",
+            model="gpt-4o-mini",
             messages=[
                 {
                     "role": "user",
