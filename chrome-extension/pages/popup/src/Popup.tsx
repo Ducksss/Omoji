@@ -55,13 +55,14 @@ const Popup = () => {
   };
 
   return (
-    <div className={`App ${isLight ? 'bg-slate-50' : 'bg-gray-800'}`}>
+    <div className={`App`}>
       <header className={`App-header ${isLight ? 'text-gray-900' : 'text-gray-100'}`}>
         <Webcam
           audio={false}
           height={720}
           screenshotFormat="image/jpeg"
           width={1280}
+          style={{ borderRadius: 5 }}
           videoConstraints={videoConstraints}>
           {({ getScreenshot }) =>
             loading ? (
@@ -76,7 +77,7 @@ const Popup = () => {
             ) : (
               <button
                 aria-label="Capture photo"
-                className="capture-button"
+                className="capture-button w-full"
                 onClick={() => handleCapturePhoto(getScreenshot)}>
                 Capture photo
               </button>
