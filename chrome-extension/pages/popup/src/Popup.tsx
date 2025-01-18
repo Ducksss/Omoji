@@ -65,6 +65,45 @@ const Popup = () => {
 
   // Handle webcam photo capture
   const handleCapturePhoto = async getScreenshot => {
+    // Create an overlay element
+    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+      chrome.scripting.executeScript({
+        target: { tabId: tabs[0].id },
+        func: () => {
+          // Create an overlay that covers the entire screen
+          const overlay = document.createElement('div');
+          overlay.style.position = 'fixed';
+          overlay.style.top = '0';
+          overlay.style.left = '0';
+          overlay.style.width = '100%';
+          overlay.style.height = '100%';
+          overlay.style.backgroundColor = 'rgba(255, 255, 255, 1)'; // Fully white initially
+          overlay.style.zIndex = '9999';
+          overlay.style.transition = 'opacity 1s ease-in-out'; // Add smooth fade-out transition
+          overlay.style.opacity = '1'; // Start fully visible
+
+          // Append overlay to the body
+          document.body.appendChild(overlay);
+
+          // Trigger the fade-out effect
+          setTimeout(() => {
+            overlay.style.opacity = '0'; // Fade out
+          }, 100); // Delay slightly to allow the browser to render the overlay first
+
+          // Remove the overlay from the DOM after the fade-out
+          setTimeout(() => {
+            document.body.removeChild(overlay);
+          }, 1500); // Match the duration of the transition
+        },
+        args: [],
+      });
+    });
+
+    // Remove the overlay from the DOM after the fade-out
+    setTimeout(() => {
+      document.body.removeChild(overlay);
+    }, 1500); // Match the duration of the transition
+
     const imageSrc = getScreenshot();
     if (imageSrc) {
       setFastData(null);
@@ -74,6 +113,7 @@ const Popup = () => {
       await sendData(imageSrc, setFastData, setSlowData, setLoadingFast, setLoadingSlow);
     }
   };
+
   const handleCopyToClipboard = async () => {
     if (fastData?.emoji) {
       try {
@@ -118,13 +158,7 @@ const Popup = () => {
                     </div>
                   )}
                 </div>
-
-                {/* <div className="flex w-full justify-center items-center">
-                  {loadingSlow && <ClipLoader aria-label="Loading Slow API" color="#3b3b3b" size={20} />}
-                  {slowData && <span>{slowData.emoji}</span>}
-                </div> */}
               </div>
-
               <button
                 aria-label="Capture photo"
                 className="capture-button"
