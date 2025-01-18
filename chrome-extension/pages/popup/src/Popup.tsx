@@ -12,13 +12,30 @@ const videoConstraints = {
 };
 
 const sendData = async (imageSrc: string) => {
-  // Simulate a network request with a delay
-  return new Promise<void>(resolve => {
-    setTimeout(() => {
-      console.log('Data sent:', imageSrc);
-      resolve();
-    }, 2000);
-  });
+  try {
+    // Simulate a network request with a delay
+    console.log('imageSrc', imageSrc);
+    const response = await fetch('http://localhost:8000/image-to-emoji', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        image: imageSrc, // Assuming `imageSrc` is a valid base64 image string or URL
+      }),
+    });
+
+    // Check if the response is OK (status 200-299)
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+
+    // Optionally, handle the response body if necessary
+    const result = await response.json();
+    console.log('Response from server:', result);
+  } catch (error) {
+    console.error('Error sending data:', error);
+  }
 };
 
 const Popup = () => {
@@ -29,7 +46,7 @@ const Popup = () => {
 
   // Handle webcam photo capture
   const handleCapturePhoto = async (getScreenshot: () => string | null) => {
-    const imageSrc = await getScreenshot();
+    const imageSrc = getScreenshot();
     if (imageSrc) {
       setLoading(true);
       await sendData(imageSrc);
@@ -49,18 +66,18 @@ const Popup = () => {
           {({ getScreenshot }) =>
             loading ? (
               <ClipLoader
-                color={color}
-                loading={loading}
-                cssOverride={{ display: 'block', margin: '0 auto' }}
-                size={150}
                 aria-label="Loading Spinner"
+                color={color}
+                cssOverride={{ display: 'block', margin: '0 auto' }}
                 data-testid="loader"
+                loading={loading}
+                size={150}
               />
             ) : (
               <button
-                onClick={() => handleCapturePhoto(getScreenshot)}
+                aria-label="Capture photo"
                 className="capture-button"
-                aria-label="Capture photo">
+                onClick={() => handleCapturePhoto(getScreenshot)}>
                 Capture photo
               </button>
             )
