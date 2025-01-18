@@ -8,6 +8,7 @@ dependencies = [
     "fastapi[standard]>=0.115.6",
     "huggingface-hub>=0.27.1",
     "openai>=1.59.8",
+    "pillow>=11.1.0",
     "torch>=2.5.1",
     "transformers>=4.48.0",
 ]

@@ -9,11 +9,13 @@
 from typing import Dict
 import base64
 import os
+from io import BytesIO
 
 import torch
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from huggingface_hub import InferenceClient
 from openai import OpenAI
 
 # Initialize FastAPI app
@@ -52,10 +54,19 @@ class ImageToEmojiOutput(BaseModel):
     text: str  # image description
 
 
+class GenmojiInput(BaseModel):
+    image: str
+
+
+class GenmojiOutput(BaseModel):
+    image: str  # base64 encoded image
+
+
 # Initialize clients and models
 model = None
 tokenizer = None
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+genmoji_client = InferenceClient("EvanZhouDev/open-genmoji")
 
 
 @app.on_event("startup")
@@ -172,6 +183,46 @@ async def image_to_emoji(input_data: ImageToEmojiInput) -> Dict:
         raise HTTPException(
             status_code=500, detail=f"Image to emoji conversion error: {str(e)}"
         )
+
+
+@app.post("/generate-emoji", response_model=GenmojiOutput)
+async def generate_emoji(input_data: GenmojiInput) -> Dict:
+    try:
+        # First, get image description from Vision API
+        vision_response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Focus on the main subject from the image and describe how this will look like in an emoji",
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"{input_data.image}"},
+                        },
+                    ],
+                }
+            ],
+            max_tokens=100,  # Shorter response for efficiency
+        )
+
+        image_description = vision_response.choices[0].message.content
+        print(image_description)
+
+        # Generate image using Genmoji
+        pil_image = genmoji_client.text_to_image(image_description)
+
+        # Convert PIL image to base64
+        buffered = BytesIO()
+        pil_image.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode()
+
+        return {"image": img_str}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Emoji generation error: {str(e)}")
 
 
 @app.get("/health")
