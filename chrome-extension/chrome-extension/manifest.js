@@ -40,7 +40,7 @@ const manifest = withSidePanel({
   version: packageJson.version,
   description: '__MSG_extensionDescription__',
   host_permissions: ['<all_urls>'],
-  permissions: ['storage', 'scripting', 'tabs', 'notifications'],
+  permissions: ['storage', 'activeTab', 'scripting', 'tabs', 'notifications'],
   options_page: 'options/index.html',
   background: {
     service_worker: 'background.iife.js',
@@ -77,6 +77,16 @@ const manifest = withSidePanel({
       matches: ['*://*/*'],
     },
   ],
+  commands: {
+    'name-of-command-passed-into-function': {
+      suggested_key: 'Ctrl+Shift+Q',
+      description: 'do somthing',
+    },
+    shortcut2: {
+      suggested_key: 'Ctrl+Shift+A',
+      description: 'do somthing else',
+    },
+  },
 });
 
 export default manifest;
