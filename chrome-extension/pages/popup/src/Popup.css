@@ -53,3 +53,31 @@ code {
   width: 100;
   margin-bottom: 20px;
 }
+
+.bento-container {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border: 2px solid #e0e0e0;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.emoji-container {
+  margin-right: 10px;
+}
+
+.emoji {
+  font-size: 30px;
+}
+
+.text-container {
+  flex-grow: 1;
+}
+
+.text-container p {
+  margin: 0;
+  font-size: 14px;
+  color: #333;
+}

@@ -52,12 +52,8 @@ const sendData = async (imageSrc: string) => {
     if (!response2.ok) {
       throw new Error(`Request failed with status ${response2.status}`);
     }
-
-    // Optionally, handle the response body if necessary
-    result2 = await response2.json();
-    console.log('Response2 from server:', result2);
-  } catch (error2) {
-    console.error('Error2 sending data:', error2);
+  } catch (error) {
+    console.error('Error sending data:', error);
   }
 
   return [result1, result2];
@@ -68,13 +64,16 @@ const Popup = () => {
   const isLight = theme === 'light';
   const [loading, setLoading] = useState(false);
   const [color] = useState('#ffffff'); // Static color for spinner, can be dynamic later if needed
+  const [data, setData] = useState(null);
 
   // Handle webcam photo capture
   const handleCapturePhoto = async (getScreenshot: () => string | null) => {
     const imageSrc = getScreenshot();
     if (imageSrc) {
       setLoading(true);
-      await sendData(imageSrc);
+      const result = await sendData(imageSrc);
+      setData(result);
+      console.log('XIAN', result);
       setLoading(false);
     }
   };
@@ -100,12 +99,28 @@ const Popup = () => {
                 size={150}
               />
             ) : (
-              <button
-                aria-label="Capture photo"
-                className="capture-button w-full"
-                onClick={() => handleCapturePhoto(getScreenshot)}>
-                Capture photo
-              </button>
+              <>
+                {data && (
+                  <div className="flex flex-row align-center justify-center">
+                    <div className="mt-4 bento-container">
+                      <div className="emoji-container">
+                        <span className="emoji">{data.emoji}</span>
+                      </div>
+                    </div>
+                    <div className="mt-4 bento-container">
+                      <div className="emoji-container">
+                        <span className="emoji">{data.emoji}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <button
+                  aria-label="Capture photo"
+                  className="capture-button w-full"
+                  onClick={() => handleCapturePhoto(getScreenshot)}>
+                  Capture photo
+                </button>
+              </>
             )
           }
         </Webcam>
