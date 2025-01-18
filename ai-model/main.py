@@ -113,9 +113,7 @@ async def analyze_image(input_data: ImageInput) -> Dict:
                         {"type": "text", "text": input_data.prompt},
                         {
                             "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{input_data.image}"
-                            },
+                            "image_url": {"url": f"{input_data.image}"},
                         },
                     ],
                 }
@@ -150,9 +148,7 @@ async def image_to_emoji(input_data: ImageToEmojiInput) -> Dict:
                         },
                         {
                             "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{input_data.image}"
-                            },
+                            "image_url": {"url": f"{input_data.image}"},
                         },
                     ],
                 }
