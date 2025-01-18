@@ -65,14 +65,19 @@ const Popup = () => {
   const [loading, setLoading] = useState(false);
   const [color] = useState('#ffffff'); // Static color for spinner, can be dynamic later if needed
   const [data, setData] = useState(null);
+  const [image, setImage] = useState(null);
+
+  const logo = isLight ? 'popup/logo_vertical.svg' : 'popup/logo_vertical_dark.svg';
 
   // Handle webcam photo capture
   const handleCapturePhoto = async (getScreenshot: () => string | null) => {
     const imageSrc = getScreenshot();
     if (imageSrc) {
+      setImage(imageSrc);
       setLoading(true);
       const result = await sendData(imageSrc);
       setData(result);
+      setImage(null);
       console.log('XIAN', result);
       setLoading(false);
     }
@@ -81,49 +86,41 @@ const Popup = () => {
   return (
     <div className={`App`}>
       <header className={`App-header ${isLight ? 'text-gray-900' : 'text-gray-100'}`}>
-        <Webcam
-          audio={false}
-          height={720}
-          screenshotFormat="image/jpeg"
-          width={1280}
-          style={{ borderRadius: 5 }}
-          videoConstraints={videoConstraints}>
-          {({ getScreenshot }) =>
-            loading ? (
-              <ClipLoader
-                aria-label="Loading Spinner"
-                color={color}
-                cssOverride={{ display: 'block', margin: '0 auto' }}
-                data-testid="loader"
-                loading={loading}
-                size={150}
-              />
-            ) : (
-              <>
-                {data && (
-                  <div className="flex flex-row align-center justify-center">
-                    <div className="mt-4 bento-container">
-                      <div className="emoji-container">
-                        <span className="emoji">{data.emoji}</span>
-                      </div>
-                    </div>
-                    <div className="mt-4 bento-container">
-                      <div className="emoji-container">
-                        <span className="emoji">{data.emoji}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <button
-                  aria-label="Capture photo"
-                  className="capture-button w-full"
-                  onClick={() => handleCapturePhoto(getScreenshot)}>
-                  Capture photo
-                </button>
-              </>
-            )
-          }
-        </Webcam>
+        <div className="flex flex-row justify-center " style={{ alignItems: 'center' }}>
+          <img src={chrome.runtime.getURL(logo)} className="App-logo" alt="logo" />
+          <p className="text-3xl font-bold mb-3">Omoji 📸</p>
+        </div>
+        {image ? (
+          <div className="flex flex-col items-center">
+            <img
+              src={image}
+              alt="captured"
+              style={{
+                height: '720',
+                width: '1280',
+              }}
+            />
+            <ClipLoader color={color} loading={loading} size={150} />
+          </div>
+        ) : (
+          <Webcam
+            audio={false}
+            height={720}
+            width={1280}
+            screenshotFormat="image/jpeg"
+            videoConstraints={videoConstraints}
+            onUserMedia={() => console.log('User media')}
+            onUserMediaError={() => console.log('User media error')}
+            onScreenshot={handleCapturePhoto}>
+            {({ getScreenshot }) => (
+              <button
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                onClick={() => handleCapturePhoto(getScreenshot)}>
+                Capture photo
+              </button>
+            )}
+          </Webcam>
+        )}
       </header>
     </div>
   );
