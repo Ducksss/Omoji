@@ -67,6 +67,7 @@ const Popup = () => {
   const handleCapturePhoto = async getScreenshot => {
     const imageSrc = getScreenshot();
     if (imageSrc) {
+      setFastData(null);
       setLoadingFast(true);
       setLoadingSlow(true);
       console.log('test');
@@ -110,7 +111,7 @@ const Popup = () => {
                   )}
                   {fastData && (
                     <div className="flex flex-col w-full">
-                      <span className="fast-result-emoji-text">👦🏻</span>
+                      <span className="fast-result-emoji-text">{fastData?.emoji}</span>
                       <button className="copy-button" aria-label="Copy to clipboard" onClick={handleCopyToClipboard}>
                         Copy
                       </button>
