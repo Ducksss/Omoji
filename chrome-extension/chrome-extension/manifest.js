@@ -50,9 +50,9 @@ const manifest = withSidePanel({
     default_popup: 'popup/index.html',
     default_icon: 'icon-34.png',
   },
-  chrome_url_overrides: {
-    newtab: 'new-tab/index.html',
-  },
+  // chrome_url_overrides: {
+  //   newtab: 'new-tab/index.html',
+  // },
   icons: {
     128: 'icon-128.png',
   },
@@ -78,12 +78,8 @@ const manifest = withSidePanel({
     },
   ],
   commands: {
-    'name-of-command-passed-into-function': {
-      suggested_key: 'Ctrl+Shift+Q',
-      description: 'do somthing',
-    },
-    shortcut2: {
-      suggested_key: 'Ctrl+Shift+N',
+    "open-up-pop-up": {
+      suggested_key: 'Ctrl+Shift+Y',
       description: 'do somthing else',
     },
   },

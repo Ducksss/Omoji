@@ -1,8 +1,9 @@
 import '@src/Popup.css';
 import { useStorage, withErrorBoundary, withSuspense } from '@extension/shared';
 import { exampleThemeStorage } from '@extension/storage';
-import type { ComponentPropsWithoutRef } from 'react';
+import { useState } from 'react';
 import Webcam from 'react-webcam';
+import ClipLoader from 'react-spinners/ClipLoader';
 
 const videoConstraints = {
   width: 1280,
@@ -10,93 +11,64 @@ const videoConstraints = {
   facingMode: 'user',
 };
 
-const notificationOptions = {
-  type: 'basic',
-  iconUrl: chrome.runtime.getURL('icon-34.png'),
-  title: 'Injecting content script error',
-  message: 'You cannot inject script here!',
-} as const;
+const sendData = async (imageSrc: string) => {
+  // Simulate a network request with a delay
+  return new Promise<void>(resolve => {
+    setTimeout(() => {
+      console.log('Data sent:', imageSrc);
+      resolve();
+    }, 2000);
+  });
+};
 
 const Popup = () => {
   const theme = useStorage(exampleThemeStorage);
   const isLight = theme === 'light';
-  const logo = isLight ? 'popup/logo_vertical.svg' : 'popup/logo_vertical_dark.svg';
-  const goGithubSite = () =>
-    chrome.tabs.create({ url: 'https://github.com/Jonghakseo/chrome-extension-boilerplate-react-vite' });
+  const [loading, setLoading] = useState(false);
+  const [color] = useState('#ffffff'); // Static color for spinner, can be dynamic later if needed
 
-  const injectContentScript = async () => {
-    const [tab] = await chrome.tabs.query({ currentWindow: true, active: true });
-
-    if (tab.url!.startsWith('about:') || tab.url!.startsWith('chrome:')) {
-      chrome.notifications.create('inject-error', notificationOptions);
+  // Handle webcam photo capture
+  const handleCapturePhoto = async (getScreenshot: () => string | null) => {
+    const imageSrc = await getScreenshot();
+    if (imageSrc) {
+      setLoading(true);
+      await sendData(imageSrc);
+      setLoading(false);
     }
-
-    await chrome.scripting
-      .executeScript({
-        target: { tabId: tab.id! },
-        files: ['/content-runtime/index.iife.js'],
-      })
-      .catch(err => {
-        // Handling errors related to other paths
-        if (err.message.includes('Cannot access a chrome:// URL')) {
-          chrome.notifications.create('inject-error', notificationOptions);
-        }
-      });
   };
 
   return (
     <div className={`App ${isLight ? 'bg-slate-50' : 'bg-gray-800'}`}>
       <header className={`App-header ${isLight ? 'text-gray-900' : 'text-gray-100'}`}>
-        <button onClick={goGithubSite}>
-          <img src={chrome.runtime.getURL(logo)} className="App-logo" alt="logo" />
-        </button>
-        <p>
-          Edit <code>pages/popup/src/Popup.tsx</code>
-        </p>
-        <button
-          className={
-            'font-bold mt-4 py-1 px-4 rounded shadow hover:scale-105 ' +
-            (isLight ? 'bg-blue-200 text-black' : 'bg-gray-700 text-white')
-          }
-          onClick={injectContentScript}>
-          Click to inject Content Script
-        </button>
         <Webcam
           audio={false}
           height={720}
           screenshotFormat="image/jpeg"
           width={1280}
           videoConstraints={videoConstraints}>
-          {({ getScreenshot }) => (
-            <button
-              onClick={() => {
-                const imageSrc = getScreenshot();
-                console.log(imageSrc);
-              }}>
-              Capture photo
-            </button>
-          )}
+          {({ getScreenshot }) =>
+            loading ? (
+              <ClipLoader
+                color={color}
+                loading={loading}
+                cssOverride={{ display: 'block', margin: '0 auto' }}
+                size={150}
+                aria-label="Loading Spinner"
+                data-testid="loader"
+              />
+            ) : (
+              <button
+                onClick={() => handleCapturePhoto(getScreenshot)}
+                className="capture-button"
+                aria-label="Capture photo">
+                Capture photo
+              </button>
+            )
+          }
         </Webcam>
-        <ToggleButton>Toggle theme</ToggleButton>
       </header>
     </div>
   );
 };
 
-const ToggleButton = (props: ComponentPropsWithoutRef<'button'>) => {
-  const theme = useStorage(exampleThemeStorage);
-  return (
-    <button
-      className={
-        props.className +
-        ' ' +
-        'font-bold mt-4 py-1 px-4 rounded shadow hover:scale-105 ' +
-        (theme === 'light' ? 'bg-white text-black shadow-black' : 'bg-black text-white')
-      }
-      onClick={exampleThemeStorage.toggle}>
-      {props.children}
-    </button>
-  );
-};
-
-export default withErrorBoundary(withSuspense(Popup, <div> Loading ... </div>), <div> Error Occur </div>);
+export default withErrorBoundary(withSuspense(Popup, <div>Loading...</div>), <div>Error occurred</div>);
