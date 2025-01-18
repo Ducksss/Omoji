@@ -6,14 +6,15 @@
 # image = client.text_to_image("Astronaut riding a horse")
 # Use a pipeline as a high-level helper
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
-import torch
 from typing import Dict
 import base64
-from openai import OpenAI
 import os
+
+import torch
+from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from openai import OpenAI
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -42,6 +43,15 @@ class ImageAnalysis(BaseModel):
     caption: str
 
 
+class ImageToEmojiInput(BaseModel):
+    image: str  # base64 encoded image
+
+
+class ImageToEmojiOutput(BaseModel):
+    emoji: str
+    text: str  # image description
+
+
 # Initialize clients and models
 model = None
 tokenizer = None
@@ -58,6 +68,7 @@ async def load_model():
         tokenizer = AutoTokenizer.from_pretrained(
             "KoalaAI/Emoji-Suggester", use_auth_token=True
         )
+        # print([i for i in model.config.id2label.values()])
     except Exception as e:
         raise RuntimeError(f"Failed to load model and tokenizer: {str(e)}")
 
@@ -116,6 +127,55 @@ async def analyze_image(input_data: ImageInput) -> Dict:
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Image analysis error: {str(e)}")
+
+
+@app.post("/image-to-emoji", response_model=ImageToEmojiOutput)
+async def image_to_emoji(input_data: ImageToEmojiInput) -> Dict:
+    if not os.getenv("OPENAI_API_KEY") or not model or not tokenizer:
+        raise HTTPException(
+            status_code=500, detail="API key not configured or models not loaded"
+        )
+
+    try:
+        # First, get image description from Vision API
+        vision_response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Describe the image like posting a new tweet",
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{input_data.image}"
+                            },
+                        },
+                    ],
+                }
+            ],
+            max_tokens=100,  # Shorter response for efficiency
+        )
+
+        image_description = vision_response.choices[0].message.content
+
+        # Then, get emoji prediction for the description
+        inputs = tokenizer(image_description, return_tensors="pt")
+
+        with torch.no_grad():
+            outputs = model(**inputs)
+
+        predicted_emoji = model.config.id2label[outputs.logits.argmax(dim=-1).item()]
+
+        return {"emoji": predicted_emoji, "text": image_description}
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Image to emoji conversion error: {str(e)}"
+        )
 
 
 @app.get("/health")
