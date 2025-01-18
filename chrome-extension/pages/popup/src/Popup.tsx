@@ -2,6 +2,13 @@ import '@src/Popup.css';
 import { useStorage, withErrorBoundary, withSuspense } from '@extension/shared';
 import { exampleThemeStorage } from '@extension/storage';
 import type { ComponentPropsWithoutRef } from 'react';
+import Webcam from 'react-webcam';
+
+const videoConstraints = {
+  width: 1280,
+  height: 720,
+  facingMode: 'user',
+};
 
 const notificationOptions = {
   type: 'basic',
@@ -54,6 +61,22 @@ const Popup = () => {
           onClick={injectContentScript}>
           Click to inject Content Script
         </button>
+        <Webcam
+          audio={false}
+          height={720}
+          screenshotFormat="image/jpeg"
+          width={1280}
+          videoConstraints={videoConstraints}>
+          {({ getScreenshot }) => (
+            <button
+              onClick={() => {
+                const imageSrc = getScreenshot();
+                console.log(imageSrc);
+              }}>
+              Capture photo
+            </button>
+          )}
+        </Webcam>
         <ToggleButton>Toggle theme</ToggleButton>
       </header>
     </div>
