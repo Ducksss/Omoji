@@ -12,10 +12,10 @@ const videoConstraints = {
 };
 
 const sendData = async (imageSrc: string) => {
+  let result1, result2;
   try {
-    // Simulate a network request with a delay
     console.log('imageSrc', imageSrc);
-    const response = await fetch('http://localhost:8000/image-to-emoji', {
+    const response1 = await fetch('http://localhost:8000/image-to-emoji', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -26,16 +26,41 @@ const sendData = async (imageSrc: string) => {
     });
 
     // Check if the response is OK (status 200-299)
-    if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
+    if (!response1.ok) {
+      throw new Error(`Request failed with status ${response1.status}`);
     }
 
     // Optionally, handle the response body if necessary
-    const result = await response.json();
-    console.log('Response from server:', result);
-  } catch (error) {
-    console.error('Error sending data:', error);
+    result1 = await response1.json();
+    console.log('Response1 from server:', result1);
+  } catch (error1) {
+    console.error('Error1 sending data:', error1);
   }
+
+  try {
+    const response2 = await fetch('http://localhost:8000/generate-emoji', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        image: imageSrc, // Assuming `imageSrc` is a valid base64 image string or URL
+      }),
+    });
+
+    // Check if the response is OK (status 200-299)
+    if (!response2.ok) {
+      throw new Error(`Request failed with status ${response2.status}`);
+    }
+
+    // Optionally, handle the response body if necessary
+    result2 = await response2.json();
+    console.log('Response2 from server:', result2);
+  } catch (error2) {
+    console.error('Error2 sending data:', error2);
+  }
+
+  return [result1, result2];
 };
 
 const Popup = () => {
