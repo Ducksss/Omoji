@@ -1,3 +1,5 @@
+![Marketing1](https://raw.githubusercontent.com/Ducksss/Omoji/main/marketing/marketing-github-1.png)
+
 # Omoji 🎭➡️😊
 
 **Omoji** is your personal emoji concierge, transforming your facial expressions into perfectly matched emojis in real-time. Why scroll endlessly through emoji lists when your face can do the talking? Powered by cutting-edge AI, Omoji revolutionizes how we communicate with emojis—because sometimes, your expression says it all.
@@ -85,3 +87,7 @@ This tech marvel combines:
 - Tham Kei Lok (Frontend Engineer/UIUX Designer) - [LinkedIn](https://www.linkedin.com/in/keiloktql/)
 
 - Chai Pin Zheng (Frontend Engineer/Web Extension Engineer) - [LinkedIn](https://www.linkedin.com/in/chai-pin-zheng-5610921aa/)
+
+![Marketing2](https://raw.githubusercontent.com/Ducksss/Omoji/main/marketing/marketing-github-2.png)
+
+![Marketing3](https://raw.githubusercontent.com/Ducksss/Omoji/main/marketing/marketing-github-3.png)
