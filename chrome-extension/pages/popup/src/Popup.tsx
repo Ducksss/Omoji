@@ -6,6 +6,14 @@ import Webcam from 'react-webcam';
 import ClipLoader from 'react-spinners/ClipLoader';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
+// import { Network, Alchemy } from "alchemy-sdk";
+
+// Optional config object, but defaults to demo api-key and eth-mainnet.
+// const settings = {
+//   apiKey: "U5VJUI5c4aapFj6HcKRYPwd_dN3--5d5", // Replace with your Alchemy API Key.
+//   network: Network.MATIC_MAINNET, // Replace with your network.
+// };
+// const alchemy = new Alchemy(settings);
 
 const videoConstraints = {
   width: 1280,
@@ -159,7 +167,7 @@ const Popup = () => {
                     <div className="flex flex-col w-full">
                       <span className="fast-result-emoji-text">{fastData?.emoji}</span>
                       <button className="copy-button" aria-label="Copy to clipboard" onClick={handleCopyToClipboard}>
-                        Copy
+                        Copy 🤩
                       </button>
                     </div>
                   )}
@@ -170,12 +178,13 @@ const Popup = () => {
                 className="capture-button"
                 disabled={loadingFast}
                 onClick={() => handleCapturePhoto(getScreenshot)}>
-                Capture Photo
+                {loadingFast ? 'Loading...' : 'Capture Photo 📷'}
               </button>
             </>
           )}
         </Webcam>
       </header>
+      <p className="pb-4 text-slate-500">Powered by OpenAI.</p>
     </div>
   );
 };
