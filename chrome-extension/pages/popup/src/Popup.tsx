@@ -62,6 +62,7 @@ const Popup = () => {
   const [loadingSlow, setLoadingSlow] = useState(false);
   const [fastData, setFastData] = useState<ApiResponse | null>(null);
   const [slowData, setSlowData] = useState<ApiResponse | null>(null);
+  const logo = isLight ? 'popup/logo_vertical.svg' : 'popup/logo_vertical_dark.svg';
 
   // Handle webcam photo capture
   const handleCapturePhoto = async getScreenshot => {
@@ -135,6 +136,11 @@ const Popup = () => {
     <div className={`App`}>
       <ToastContainer />
       <header className={`App-header ${isLight ? 'text-gray-900' : 'text-gray-100'}`}>
+        <div className="flex flex-row items-center">
+          <img src={chrome.runtime.getURL(logo)} className="App-logo" alt="logo" />
+          {/**Text black */}
+          <p className="block text-3xl font-bold text-gray-900">Omoji</p>
+        </div>
         <Webcam
           audio={false}
           height={720}
